@@ -1,3 +1,7 @@
+// Este código é um aplicativo React Native usando Expo que gerencia a localização do dispositivo. 
+// Ele solicita permissões de localização, obtém a localização atual, rastreia a localização continuamente e mantém um histórico das últimas localizações. O aplicativo também fornece feedback visual sobre o status da permissão e do rastreamento, além de exibir mensagens de erro quando necessário.
+
+// Importa o módulo de localização do Expo e os hooks do React para gerenciar estado e efeitos colaterais
 import * as Location from 'expo-location';
 import { useEffect, useRef, useState } from 'react';
 import {
@@ -11,6 +15,7 @@ import {
   View,
 } from 'react-native';
 
+// Gerencia toda a lógica de localização, incluindo permissões, obtenção da localização atual e rastreamento contínuo
 function useLocationManager() {
   const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
   const [locationHistory, setLocationHistory] = useState<{ latitude: number; longitude: number; timestamp: number }[]>([]);
