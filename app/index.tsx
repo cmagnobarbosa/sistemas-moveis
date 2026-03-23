@@ -1,144 +1,16 @@
 // Este código é um aplicativo React Native usando Expo que gerencia a localização do dispositivo. 
 // Ele solicita permissões de localização, obtém a localização atual, rastreia a localização continuamente e mantém um histórico das últimas localizações. O aplicativo também fornece feedback visual sobre o status da permissão e do rastreamento, além de exibir mensagens de erro quando necessário.
 
-// Importa o módulo de localização do Expo e os hooks do React para gerenciar estado e efeitos colaterais
-import * as Location from 'expo-location';
-import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-
-// Gerencia toda a lógica de localização, incluindo permissões, obtenção da localização atual e rastreamento contínuo
-function useLocationManager() {
-  const [location, setLocation] = useState<Location.LocationObjectCoords | null>(null);
-  const [locationHistory, setLocationHistory] = useState<{ latitude: number; longitude: number; timestamp: number }[]>([]);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [permissionStatus, setPermissionStatus] = useState<'loading' | 'granted' | 'denied'>(
-    'loading'
-  );
-  const [isTracking, setIsTracking] = useState(false);
-  const [isLoadingCurrentLocation, setIsLoadingCurrentLocation] = useState(false);
-
-  const subscriptionRef = useRef<Location.LocationSubscription | null>(null);
-
-  useEffect(() => {
-    requestLocationPermission();
-
-    return () => {
-      subscriptionRef.current?.remove();
-    };
-  }, []);
-
-  const requestLocationPermission = async () => {
-    try {
-      setPermissionStatus('loading');
-      setErrorMsg(null);
-
-      const { status } = await Location.requestForegroundPermissionsAsync();
-
-      if (status !== 'granted') {
-        setPermissionStatus('denied');
-        setErrorMsg('Permissão de localização negada.');
-        return;
-      }
-
-      setPermissionStatus('granted');
-      await getCurrentLocation();
-    } catch (error) {
-      setPermissionStatus('denied');
-      setErrorMsg('Não foi possível solicitar a permissão de localização.');
-    }
-  };
-
-  const addToHistory = (coords: Location.LocationObjectCoords) => {
-    setLocationHistory((prev) => [{
-      latitude: coords.latitude,
-      longitude: coords.longitude,
-      timestamp: Date.now(),
-    }, ...prev].slice(0, 5));
-  };
-
-  const getCurrentLocation = async () => {
-    if (permissionStatus === 'denied') return;
-
-    try {
-      setIsLoadingCurrentLocation(true);
-      setErrorMsg(null);
-
-      const currentLocation = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
-
-      setLocation(currentLocation.coords);
-      addToHistory(currentLocation.coords);
-    } catch (error) {
-      setErrorMsg('Erro ao obter localização atual.');
-    } finally {
-      setIsLoadingCurrentLocation(false);
-    }
-  };
-
-  const startTracking = async () => {
-    if (isTracking) return;
-
-    if (permissionStatus !== 'granted') {
-      Alert.alert(
-        'Permissão necessária',
-        'É necessário permitir o acesso à localização para iniciar o rastreamento.'
-      );
-      return;
-    }
-
-    try {
-      setErrorMsg(null);
-
-      const sub = await Location.watchPositionAsync(
-        {
-          accuracy: Location.Accuracy.High,
-          timeInterval: 5000,
-          distanceInterval: 10,
-        },
-        (loc) => {
-          setLocation(loc.coords);
-          addToHistory(loc.coords);
-        }
-      );
-
-      subscriptionRef.current = sub;
-      setIsTracking(true);
-    } catch (error) {
-      setErrorMsg('Erro ao iniciar rastreamento.');
-    }
-  };
-
-  const stopTracking = () => {
-    if (subscriptionRef.current) {
-      subscriptionRef.current.remove();
-      subscriptionRef.current = null;
-    }
-    setIsTracking(false);
-  };
-
-  return {
-    location,
-    locationHistory,
-    errorMsg,
-    permissionStatus,
-    isTracking,
-    isLoadingCurrentLocation,
-    requestLocationPermission,
-    getCurrentLocation,
-    startTracking,
-    stopTracking,
-  };
-}
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { useLocationManager } from '../hooks/useLocationManager';
 
 export default function App() {
   const loc = useLocationManager();
@@ -160,7 +32,7 @@ export default function App() {
         : 'Negada';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.appTitle}>Localiza Mobile</Text>
         <Text style={styles.subtitle}>
